@@ -37,6 +37,10 @@ public class Parser {
         String titulo = soln.getLiteral("titulo").toString();
         String descripcion = soln.getLiteral("descripcion").toString();
 
+
+
+
+
         ArrayList<String> facebookImagesIds= new ArrayList( Arrays.asList( soln.getLiteral("fbIDs").toString().split(",") ) );
         facebookImagesIds.remove("http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag");
         //facebookImagesIds.remove(facebookImagesIds.size()-1);
@@ -48,6 +52,25 @@ public class Parser {
 
         PlaceResponse myPlaceResponse = new PlaceResponse(placeId,titulo,status,mypoint,descripcion,facebookImagesUrls,facebookImagesIds,new Organization(orgId,orgName),new Region(regionId,region),new User(creadoPor,nombreCreador));
 
+        if(soln.getLiteral("date")!=null){
+            String date = soln.getLiteral("date").getString();
+            myPlaceResponse.setFecha(date);
+        }else{
+            myPlaceResponse.setFecha("2023-02-23T02:52:03.851807Z");
+        }
+        if(soln.getLiteral("distance")!=null){
+            Double distancia = soln.getLiteral("distance").getDouble();
+            myPlaceResponse.setDistancia(distancia);
+        }else{
+            myPlaceResponse.setDistancia(null);
+        }
+
+        if(soln.getLiteral("categoria")!=null){
+            String categoria = soln.getLiteral("categoria").toString();
+            myPlaceResponse.setCategoria(categoria);
+        }else{
+            myPlaceResponse.setCategoria(null);
+        }
 
         return myPlaceResponse;
     }

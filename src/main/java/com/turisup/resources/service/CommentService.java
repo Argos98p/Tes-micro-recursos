@@ -18,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static com.turisup.resources.repository.SparqlTemplates.deleteComent;
@@ -69,6 +72,8 @@ public class CommentService {
             commentResource.addProperty(myModel.createProperty(BASE,"#place"),placeResource);
             commentResource.addLiteral(myModel.createProperty(BASE,"#text"), newComment.getComentario());
             commentResource.addLiteral(myModel.createProperty(BASE,"#rating"),newComment.getPuntaje());
+            commentResource.addProperty(DC.date,  myModel.createTypedLiteral(ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ISO_INSTANT ), "http://www.w3.org/2001/XMLSchema#dateTime"));
+
             if(imagesPaths.size()>0){
                 commentResource.addProperty(myModel.createProperty(BASE,"#facebookId"),facebookIds);
                 for (int i=0; i<srcAndIds.get(0).size();i++){

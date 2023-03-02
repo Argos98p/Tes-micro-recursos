@@ -9,6 +9,7 @@ import com.turisup.resources.model.request.post.AddRoute;
 import com.turisup.resources.model.request.post.PlaceRequest;
 import com.turisup.resources.service.PlaceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -53,15 +54,46 @@ public class PlaceController {
     }
 
     @GetMapping("/todos")
-    public ResponseEntity<List<PlaceResponse>> allPlaces(
+    public ResponseEntity<?> allPlaces(
             @RequestParam(name="organizacionId") Optional<String> organizacionId,
             @RequestParam(name="regionId") Optional<String>  regionId,
             @RequestParam(name="creadorId") Optional<String>  creadorId,
             @RequestParam(name="lugarId") Optional<String>  lugarId,
-            @RequestParam(name="estadoLugar") Optional<String>  estadoLugar
+            @RequestParam(name="estadoLugar") Optional<String>  estadoLugar,
+            @RequestParam(name="latitud") Optional<String> latitud,
+            @RequestParam(name="longitud") Optional<String> longitud,
+            @RequestParam(name="distancia") Optional<String> distancia
     ){
 
+
         QueryOptions queryOptions = new QueryOptions();
+
+
+        if((latitud.isPresent() && !longitud.isPresent()) || (!latitud.isPresent() && longitud.isPresent())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Se encontro longitud pero no latitud o viceversa");
+        }
+        if(longitud.isPresent() && latitud.isPresent()){
+            double lat = Double.parseDouble(latitud.get());
+            double longi= Double.parseDouble(longitud.get());
+            if(lat<90 && lat >-90){
+                queryOptions.setLatitud(lat);
+            }else{
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Latitud no valida");
+            }
+
+            if(longi<180 && longi>-180){
+                queryOptions.setLongitud(longi);
+            }else{
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Longitud no valida");
+            }
+        }
+        if( distancia.isPresent() ){
+            if(Double.parseDouble(distancia.get())<0){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Distancia invalida");
+            }
+
+        }
+
         if (organizacionId.isPresent()) {
             queryOptions.setOrganizacionId(organizacionId.get());
         } else {
@@ -86,12 +118,15 @@ public class PlaceController {
         } else {
             queryOptions.setEstadoLugar(null);
         }
+        distancia.ifPresent(s -> queryOptions.setDistanciaMax(Double.parseDouble(s)));
 
 
         List<PlaceResponse> places = placeService.all( queryOptions);
         //
         return ResponseEntity.ok().body(places);
     }
+
+
 
 
 }

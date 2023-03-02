@@ -16,8 +16,11 @@ public class PlaceResponse {
     Organization organizacion;
     Region region;
     User user;
+    Double distancia;
+    String fecha;
+    String categoria;
 
-    public PlaceResponse(String id, String nombre,String status, PlacePoint coordenadas, String descripcion, ArrayList<String> imagenesPaths, ArrayList<String> fbImagenesIds, Organization organizacion, Region region, User user) {
+    public PlaceResponse(String id, String nombre,String status, PlacePoint coordenadas, String descripcion, ArrayList<String> imagenesPaths, ArrayList<String> fbImagenesIds, Organization organizacion, Region region, User user ) {
         this.id = id;
         this.nombre = nombre;
         this.status = status;

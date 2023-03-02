@@ -16,6 +16,8 @@ public class PlaceRequest {
     String descripcion;
     @NotNull
     String usuarioId;
+    @NotNull
+    String categoria;
     String estado;
     String placeid;
 }

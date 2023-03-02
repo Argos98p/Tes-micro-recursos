@@ -9,4 +9,7 @@ public class QueryOptions {
     String creadorId;
     String lugarId;
     String estadoLugar;
+    Double latitud;
+    Double longitud;
+    Double distanciaMax;
 }

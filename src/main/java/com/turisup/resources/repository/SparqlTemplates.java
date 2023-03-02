@@ -25,6 +25,8 @@ public class SparqlTemplates {
             "prefix baseProperty: <http://turis-ucuenca#>" +
             "prefix base3:<http://turis-ucuenca/>"+
             "prefix fb:<http://turis-ucuenca#>"+
+            "prefix unit: <http://qudt.org/vocab/unit#>"+
+            "prefix geof: <http://www.opengis.net/def/function/geosparql/>"+
             "base  <http://turis-ucuenca/>";
 
     public static String getPlace(String placeId){
@@ -36,6 +38,7 @@ public class SparqlTemplates {
                     lugar +" fb:facebookId ?faceboook_id_node."+
                     lugar +" dc:creator ?creador."+
                     lugar +" vcard:hasPhoto ?imagenes2."+
+
                     lugar +" geo:hasGeometry ?geometry_node."+
                     "?geometry_node geo:asWKT ?point."+
                     "?faceboook_id_node ?prop ?idFacebook."+
@@ -107,6 +110,10 @@ public class SparqlTemplates {
             filters = filters + "FILTER(str(?place)='http://turis-ucuenca/lugar/"+queryOptions.getLugarId()+"').\n";
         }if(queryOptions.getOrganizacionId()!=null){
             filters = filters +  "FILTER(str(?org)='http://turis-ucuenca/org/"+queryOptions.getOrganizacionId()+"').\n";
+        }if(queryOptions.getLatitud()!=null && queryOptions.getLongitud()!=null){
+            filters = filters + " BIND(geof:distance(?geom, \"POINT("+queryOptions.getLongitud()+" "+queryOptions.getLatitud()+")\"^^geo:wktLiteral, unit:Kilometer) as ?distance)\n";
+        }if(queryOptions.getDistanciaMax()!=null){
+            filters = filters +"FILTER(geof:distance(?geom, \"POINT("+queryOptions.getLongitud()+" "+queryOptions.getLatitud()+")\"^^geo:wktLiteral, unit:Kilometer) < "+queryOptions.getDistanciaMax()+")\n";
         }if(queryOptions.getRegionId()!=null){
             filters = filters + "FILTER(str(?region)='http://turis-ucuenca/region/"+queryOptions.getRegionId()+"').\n";
         }
@@ -124,10 +131,11 @@ public class SparqlTemplates {
                 "prefix dc: <http://purl.org/dc/elements/1.1/>"+
                 "prefix fb:<http://turis-ucuenca#>"+
                 "prefix base2:<http://turis-ucuenca#>"+
+                "prefix unit: <http://qudt.org/vocab/unit#>" +
                 "prefix geof: <http://www.opengis.net/def/function/geosparql/>"+
                 "base  <http://turis-ucuenca/>"+
 
-                "SELECT ?org ?orgName ?region ?regionTitulo ?place ?titulo ?status ?descripcion (GROUP_CONCAT(DISTINCT ?imagenes2 ; SEPARATOR = ',') AS ?imagenes)  ?creador ?nombre ?point  (GROUP_CONCAT(DISTINCT ?idFacebook ; SEPARATOR = ',') AS ?fbIDs)"+
+                "SELECT ?org ?orgName ?region ?categoria ?regionTitulo ?place ?titulo ?distance ?date ?status ?descripcion (GROUP_CONCAT(DISTINCT ?imagenes2 ; SEPARATOR = ',') AS ?imagenes)  ?creador ?nombre ?point  (GROUP_CONCAT(DISTINCT ?idFacebook ; SEPARATOR = ',') AS ?fbIDs)"+
                 "WHERE {"+
                 "?region a :Region."+
                 "?region dc:title ?regionTitulo."+
@@ -139,10 +147,12 @@ public class SparqlTemplates {
                 "?place dc:title ?titulo."+
                 "?place dc:description ?descripcion."+
                 "?place fb:facebookId ?faceboook_id_node."+
+                "OPTIONAL {?place fb:category ?categoria. }"+
                 "?place dc:creator ?creador."+
                 "?place vcard:hasPhoto ?imagenes2."+
                 "?place base2:status ?status."+
                 "?place geo:hasGeometry ?geom."+
+                "OPTIONAL { ?place dc:date ?date . }"+
 
                 "?creador foaf:name ?nombre."+
 
@@ -152,7 +162,7 @@ public class SparqlTemplates {
                 "FILTER geof:within(?point,?regionWKT)."+
                 filters+
 
-                "} GROUP BY ?org ?orgName ?region ?regionTitulo ?place ?titulo ?status ?descripcion ?creador ?point ?nombre";
+                "} GROUP BY ?org ?orgName ?region ?categoria ?regionTitulo ?place ?titulo ?distance ?date ?status ?descripcion ?creador ?point ?nombre";
     }
 
     public static String usersInOrg (String orgId){
@@ -221,13 +231,14 @@ public class SparqlTemplates {
     public static String getRutaPlaces(String node_id){
         return prefixes+
                 "SELECT  ?placeId ?nombre ?descripcion (GROUP_CONCAT(DISTINCT ?imagenes2 ; SEPARATOR = ',') AS ?imagenes) ?point ?creador{\n" +
-                "    <_:"+node_id+"> ?g ?placeId.\n" +
+                "    ?nodo ?g ?placeId.\n" +
                 "    ?placeId dc:title ?nombre.\n" +
                 "    ?placeId dc:description ?descripcion.\n" +
                 "    ?placeId dc:creator ?creador.               \n" +
                 "    ?placeId vcard:hasPhoto ?imagenes2.    \n" +
                 "    ?placeId geo:hasGeometry ?geometry_node.      \n" +
                 "    ?geometry_node geo:asWKT ?point.       \n" +
+                "     FILTER(str(?nodo)=\""+node_id+"\")\n"+
                 "} GROUP BY ?placeId ?nombre ?descripcion ?point ?creador";
     }
 
@@ -254,6 +265,26 @@ public class SparqlTemplates {
                 "}WHERE{\n" +
                 "    ?user baseProperty:comment <http://turis-ucuenca/comentario/"+comentarioId+">.\n" +
                 "    <http://turis-ucuenca/comentario/"+comentarioId+"> ?f ?b.\n" +
+                "}";
+    }
+
+    public static String eliminarLugarEnRuta(String rutaId, String lugarId) {
+        return prefixes+
+                "DELETE {\n" +
+                "    ?l ?f <http://turis-ucuenca/lugar/"+lugarId+">.\n" +
+                "}WHERE{\n" +
+                "    FILTER(str(?place)=\"http://turis-ucuenca/ruta/"+rutaId+"\")\n" +
+                "    ?place :hasPlaces ?l.\n" +
+                "    ?l ?f <http://turis-ucuenca/lugar/"+lugarId+">.\n" +
+                "}";
+    }
+
+    public static String eliminarRuta(String rutaId) {
+        return prefixes+"\nDELETE {\n" +
+                "    ?place ?f ?g.\n" +
+                "}WHERE{\n" +
+                "    ?place ?f ?g.\n" +
+                "    FILTER(str(?place)=\"http://turis-ucuenca/ruta/"+rutaId+"\")\n" +
                 "}";
     }
 }
